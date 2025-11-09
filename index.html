@@ -1,0 +1,1203 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام إدارة العقار</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .table-container {
+      overflow-x: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+    
+    th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 8px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid #5a67d8;
+    }
+    
+    td {
+      padding: 10px 8px;
+      text-align: center;
+      border: 1px solid #e2e8f0;
+      font-size: 13px;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f7fafc;
+    }
+    
+    tr:hover {
+      background-color: #edf2f7;
+    }
+    
+    .owner-badge {
+      background-color: #48bb78;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .tenant-badge {
+      background-color: #4299e1;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .paid-badge {
+      background-color: #48bb78;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .unpaid-badge {
+      background-color: #f56565;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .partial-badge {
+      background-color: #ed8936;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90%;
+      overflow-y: auto;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #2d3748;
+    }
+    
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .backup-section {
+      background: #f8f9fa;
+      border: 2px dashed #dee2e6;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .backup-section input[type="file"] {
+      display: none;
+    }
+
+    .backup-section label {
+      background: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: inline-block;
+      margin: 5px;
+    }
+
+    .backup-section label:hover {
+      background: #0056b3;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .action-buttons button {
+      width: 100%;
+      font-size: 11px;
+      padding: 4px 6px;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="bg-gray-50">
+  <div class="min-h-full p-6">
+   <div class="max-w-7xl mx-auto"><!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+     <h1 class="text-3xl font-bold text-gray-800 mb-2">🏢 نظام إدارة العقار</h1>
+     <div class="flex items-center justify-between flex-wrap gap-4">
+      <div>
+       <h2 class="text-xl text-gray-600">تجميع ايصال شهر</h2>
+       <p class="text-gray-500 mt-1">عام 2025 م</p>
+      </div>
+      <div class="flex gap-3 flex-wrap"><button id="backup-btn" class="bg-gradient-to-r from-yellow-600 to-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-yellow-700 hover:to-orange-700 transition-all shadow-md text-sm"> 💾 نسخ احتياطي </button> <button id="export-btn" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all shadow-md text-sm"> 📊 تصدير Excel </button> <button id="print-btn" class="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-md text-sm"> 🖨️ طباعة </button> <button id="add-debt-btn" class="bg-gradient-to-r from-red-600 to-pink-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-red-700 hover:to-pink-700 transition-all shadow-md text-sm"> 📋 تسجيل مديونية </button> <button id="add-payment-btn" class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md"> إضافة دفعة جديدة </button>
+      </div>
+     </div>
+    </div><!-- Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+     <div class="bg-white rounded-lg shadow-md p-4">
+      <div class="text-gray-500 text-sm mb-1">
+       إجمالي الشقق
+      </div>
+      <div id="total-apartments" class="text-2xl font-bold text-gray-800">
+       21
+      </div>
+     </div>
+     <div class="bg-white rounded-lg shadow-md p-4">
+      <div class="text-gray-500 text-sm mb-1">
+       المبلغ المحصل
+      </div>
+      <div id="total-paid" class="text-2xl font-bold text-green-600">
+       0 جنيه
+      </div>
+     </div>
+     <div class="bg-white rounded-lg shadow-md p-4">
+      <div class="text-gray-500 text-sm mb-1">
+       إجمالي الديون
+      </div>
+      <div id="total-debt" class="text-2xl font-bold text-red-600">
+       0 جنيه
+      </div>
+     </div>
+     <div class="bg-white rounded-lg shadow-md p-4">
+      <div class="text-gray-500 text-sm mb-1">
+       المستأجرين
+      </div>
+      <div id="total-tenants" class="text-2xl font-bold text-blue-600">
+       10
+      </div>
+     </div>
+     <div class="bg-white rounded-lg shadow-md p-4">
+      <div class="text-gray-500 text-sm mb-1">
+       نسبة التحصيل
+      </div>
+      <div id="collection-rate" class="text-2xl font-bold text-purple-600">
+       0%
+      </div>
+     </div>
+    </div><!-- Filters -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+     <h3 class="text-lg font-semibold text-gray-800 mb-4">🔍 البحث والتصفية</h3>
+     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">البحث بالاسم</label> <input type="text" id="search-name" placeholder="ابحث عن ساكن..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">نوع الساكن</label> <select id="filter-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"> <option value="">الكل</option> <option value="مالك">مالك</option> <option value="مستأجر">مستأجر</option> </select>
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">حالة السداد</label> <select id="filter-payment" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"> <option value="">الكل</option> <option value="مدفوع">مدفوع</option> <option value="غير مدفوع">غير مدفوع</option> <option value="دفع جزئي">دفع جزئي</option> </select>
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">الدور</label> <select id="filter-floor" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"> <option value="">الكل</option> </select>
+      </div>
+     </div>
+     <div class="mt-4 flex gap-2"><button id="clear-filters" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-all"> مسح الفلاتر </button>
+     </div>
+    </div><!-- Table -->
+    <div class="bg-white rounded-lg shadow-md p-4">
+     <div class="table-container">
+      <table id="apartments-table">
+       <thead>
+        <tr>
+         <th>م</th>
+         <th>الدور</th>
+         <th>رقم الشقة</th>
+         <th>مكان الشقة</th>
+         <th>اسم الساكن</th>
+         <th>حالة الشقة</th>
+         <th>نوع الساكن</th>
+         <th>المبلغ</th>
+         <th>دفع</th>
+         <th>حالة السداد</th>
+         <th>ديون</th>
+         <th>ملاحظات</th>
+         <th>طريقة الدفع</th>
+         <th>إجراءات</th>
+        </tr>
+       </thead>
+       <tbody id="table-body">
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+  </div><!-- Add/Edit Payment Modal -->
+  <div id="payment-modal" class="modal">
+   <div class="modal-content">
+    <h3 id="modal-title" class="text-2xl font-bold text-gray-800 mb-4">إضافة دفعة جديدة</h3>
+    <form id="payment-form">
+     <div class="form-group"><label>الشقة</label> <select id="apartment-select" required> <option value="">اختر الشقة</option> </select>
+     </div>
+     <div class="form-group"><label>المبلغ المطلوب</label> <input type="number" id="amount-input" min="0" step="0.01" required>
+     </div>
+     <div class="form-group"><label>المبلغ المدفوع</label> <input type="number" id="paid-input" min="0" step="0.01" required>
+     </div>
+     <div class="form-group"><label>حالة السداد</label> <select id="payment-status-input" required> <option value="">اختر الحالة</option> <option value="مدفوع">مدفوع</option> <option value="غير مدفوع">غير مدفوع</option> <option value="دفع جزئي">دفع جزئي</option> </select>
+     </div>
+     <div class="form-group"><label>طريقة الدفع</label> <select id="payment-method-input"> <option value="">اختر طريقة الدفع</option> <option value="نقدي">نقدي</option> <option value="تحويل بنكي">تحويل بنكي</option> <option value="شيك">شيك</option> <option value="فودافون كاش">فودافون كاش</option> <option value="انستاباي">انستاباي</option> </select>
+     </div>
+     <div class="form-group"><label>الشهر</label> <select id="month-input" required> <option value="">اختر الشهر</option> <option value="يناير">يناير</option> <option value="فبراير">فبراير</option> <option value="مارس">مارس</option> <option value="أبريل">أبريل</option> <option value="مايو">مايو</option> <option value="يونيو">يونيو</option> <option value="يوليو">يوليو</option> <option value="أغسطس">أغسطس</option> <option value="سبتمبر">سبتمبر</option> <option value="أكتوبر">أكتوبر</option> <option value="نوفمبر">نوفمبر</option> <option value="ديسمبر">ديسمبر</option> </select>
+     </div>
+     <div class="form-group"><label>السنة</label> <input type="number" id="year-input" value="2025" required>
+     </div>
+     <div class="form-group"><label>ملاحظات</label> <input type="text" id="notes-input" placeholder="ملاحظات إضافية">
+     </div>
+     <div class="flex gap-3 mt-6"><button type="submit" id="submit-btn" class="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all"> حفظ </button> <button type="button" id="cancel-btn" class="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all"> إلغاء </button>
+     </div>
+    </form>
+   </div>
+  </div><!-- Edit Apartment Modal -->
+  <div id="apartment-modal" class="modal">
+   <div class="modal-content">
+    <h3 class="text-2xl font-bold text-gray-800 mb-4">🏠 تعديل بيانات الشقة</h3>
+    <form id="apartment-form">
+     <div class="form-group"><label>الدور</label> <input type="text" id="apt-floor-input" required placeholder="مثال: الأول">
+     </div>
+     <div class="form-group"><label>رقم الشقة</label> <input type="text" id="apt-number-input" required placeholder="مثال: 101">
+     </div>
+     <div class="form-group"><label>مكان الشقة</label> <select id="apt-location-input" required> <option value="">اختر المكان</option> <option value="يمين السلم">يمين السلم</option> <option value="يسار السلم">يسار السلم</option> <option value="وسط">وسط</option> </select>
+     </div>
+     <div class="form-group"><label>اسم الساكن</label> <input type="text" id="apt-resident-input" required placeholder="مثال: أ - محمد أحمد">
+     </div>
+     <div class="form-group"><label>حالة الشقة</label> <select id="apt-status-input" required> <option value="">اختر الحالة</option> <option value="ساكنة">ساكنة</option> <option value="فارغة">فارغة</option> <option value="تحت الصيانة">تحت الصيانة</option> </select>
+     </div>
+     <div class="form-group"><label>نوع الساكن</label> <select id="apt-type-input" required> <option value="">اختر النوع</option> <option value="مالك">مالك</option> <option value="مستأجر">مستأجر</option> </select>
+     </div>
+     <div class="flex gap-3 mt-6"><button type="submit" id="apt-submit-btn" class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all"> حفظ التعديلات </button> <button type="button" id="apt-cancel-btn" class="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all"> إلغاء </button>
+     </div>
+    </form>
+   </div>
+  </div><!-- Debt Registration Modal -->
+  <div id="debt-modal" class="modal">
+   <div class="modal-content">
+    <h3 class="text-2xl font-bold text-gray-800 mb-4">📋 تسجيل مديونية جديدة</h3>
+    <form id="debt-form">
+     <div class="form-group"><label>الشقة</label> <select id="debt-apartment-select" required> <option value="">اختر الشقة</option> </select>
+     </div>
+     <div class="form-group"><label>نوع المديونية</label> <select id="debt-type-input" required> <option value="">اختر نوع المديونية</option> <option value="إيجار شهري">إيجار شهري</option> <option value="صيانة">صيانة</option> <option value="خدمات">خدمات (كهرباء/مياه/غاز)</option> <option value="رسوم إدارية">رسوم إدارية</option> <option value="تأمين">تأمين</option> <option value="أخرى">أخرى</option> </select>
+     </div>
+     <div class="form-group"><label>وصف المديونية</label> <input type="text" id="debt-description-input" placeholder="مثال: إيجار شهر يناير 2025" required>
+     </div>
+     <div class="form-group"><label>مبلغ المديونية</label> <input type="number" id="debt-amount-input" min="0" step="0.01" placeholder="0.00" required>
+     </div>
+     <div class="form-group"><label>تاريخ الاستحقاق</label> <input type="date" id="debt-due-date-input" required>
+     </div>
+     <div class="form-group"><label>الشهر المستحق</label> <select id="debt-month-input" required> <option value="">اختر الشهر</option> <option value="يناير">يناير</option> <option value="فبراير">فبراير</option> <option value="مارس">مارس</option> <option value="أبريل">أبريل</option> <option value="مايو">مايو</option> <option value="يونيو">يونيو</option> <option value="يوليو">يوليو</option> <option value="أغسطس">أغسطس</option> <option value="سبتمبر">سبتمبر</option> <option value="أكتوبر">أكتوبر</option> <option value="نوفمبر">نوفمبر</option> <option value="ديسمبر">ديسمبر</option> </select>
+     </div>
+     <div class="form-group"><label>السنة</label> <input type="number" id="debt-year-input" value="2025" required>
+     </div>
+     <div class="form-group"><label>ملاحظات إضافية</label> <textarea id="debt-notes-input" rows="3" placeholder="ملاحظات أو تفاصيل إضافية..."></textarea>
+     </div>
+     <div class="flex gap-3 mt-6"><button type="submit" id="debt-submit-btn" class="flex-1 bg-gradient-to-r from-red-600 to-pink-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-red-700 hover:to-pink-700 transition-all"> تسجيل المديونية </button> <button type="button" id="debt-cancel-btn" class="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all"> إلغاء </button>
+     </div>
+    </form>
+   </div>
+  </div><!-- Backup Modal -->
+  <div id="backup-modal" class="modal">
+   <div class="modal-content">
+    <h3 class="text-2xl font-bold text-gray-800 mb-4">💾 النسخ الاحتياطي واستعادة البيانات</h3>
+    <div class="backup-section">
+     <h4 class="text-lg font-semibold mb-3">تصدير البيانات</h4>
+     <p class="text-gray-600 mb-3">احفظ نسخة احتياطية من جميع بيانات العقار</p><button id="download-backup" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"> 📥 تحميل النسخة الاحتياطية </button>
+    </div>
+    <div class="backup-section">
+     <h4 class="text-lg font-semibold mb-3">استعادة البيانات</h4>
+     <p class="text-gray-600 mb-3">استعد البيانات من ملف النسخة الاحتياطية</p><input type="file" id="restore-file" accept=".json"> <label for="restore-file" class="bg-blue-600 hover:bg-blue-700"> 📤 اختر ملف الاستعادة </label> <button id="restore-backup" class="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700" style="display:none;"> 🔄 استعادة البيانات </button>
+    </div>
+    <div class="flex gap-3 mt-6"><button id="close-backup-modal" class="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all"> إغلاق </button>
+    </div>
+   </div>
+  </div>
+  <script>
+    let referenceApartments = [
+      { id: "2", floor: "الأول", number: "101", location: "يمين السلم", resident: "أ - عبد المجيد سلطان", status: "ساكنة", type: "مالك" },
+      { id: "3", floor: "الأول", number: "102", location: "يسار السلم", resident: "أ - رضا وهيب", status: "ساكنة", type: "مالك" },
+      { id: "4", floor: "الثانى", number: "201", location: "يمين السلم", resident: "أ - ماجد محمد سامي", status: "ساكنة", type: "مالك" },
+      { id: "5", floor: "الثانى", number: "202", location: "يسار السلم", resident: "أ- محمد", status: "ساكنة", type: "مستأجر" },
+      { id: "6", floor: "الثالث", number: "301", location: "يمين السلم", resident: "أ- سيدة علي", status: "ساكنة", type: "مالك" },
+      { id: "7", floor: "الثالث", number: "302", location: "يسار السلم", resident: "أ - مرتضي", status: "ساكنة", type: "مستأجر" },
+      { id: "8", floor: "الرابع", number: "401", location: "يمين السلم", resident: "أ - فادي سمير", status: "ساكنة", type: "مستأجر" },
+      { id: "9", floor: "الرابع", number: "402", location: "يسار السلم", resident: "أ - منتصر احمد علي", status: "ساكنة", type: "مستأجر" },
+      { id: "11", floor: "الخامس", number: "502", location: "يسار السلم", resident: "الحاج محمد عبد المنعم", status: "ساكنة", type: "مالك" },
+      { id: "12", floor: "السادس", number: "601", location: "يمين السلم", resident: "أ - فادي راشد", status: "ساكنة", type: "مالك" },
+      { id: "13", floor: "السادس", number: "602", location: "يسار السلم", resident: "أ - محمد يوسف", status: "ساكنة", type: "مالك" },
+      { id: "14", floor: "السابع", number: "701", location: "يمين السلم", resident: "أ - محمد محسن", status: "ساكنة", type: "مستأجر" },
+      { id: "16", floor: "الثامن", number: "801", location: "يمين السلم", resident: "أ - محمد السيد", status: "ساكنة", type: "مستأجر" },
+      { id: "19", floor: "التاسع", number: "902", location: "يسار السلم", resident: "أ - سلامة ماضي", status: "ساكنة", type: "مستأجر" },
+      { id: "20", floor: "العاشر", number: "1001", location: "يمين السلم", resident: "أ - احمد سعيد", status: "ساكنة", type: "مالك" },
+      { id: "21", floor: "العاشر", number: "1002", location: "يسار السلم", resident: "أ - عاطف عبد العزيز", status: "ساكنة", type: "مستأجر" },
+      { id: "23", floor: "الحادى عشر", number: "1102", location: "يسار السلم", resident: "م . رانيا رمزي", status: "ساكنة", type: "مستأجر" },
+      { id: "24", floor: "الثانى عشر", number: "1201", location: "يمين السلم", resident: "أ - مشيل انطونيوس", status: "ساكنة", type: "مالك" },
+      { id: "25", floor: "الثانى عشر", number: "1202", location: "يسار السلم", resident: "أ - محمد جمال احمد", status: "ساكنة", type: "مالك" },
+      { id: "26", floor: "الثالث عشر", number: "1301", location: "يمين السلم", resident: "م . جورجيت حبيب", status: "ساكنة", type: "مالك" },
+      { id: "27", floor: "الثالث عشر", number: "1302", location: "يسار السلم", resident: "د. سامي عادل", status: "ساكنة", type: "مالك" }
+    ];
+
+    let allPayments = [];
+    let allDebts = [];
+    let currentEditingPayment = null;
+    let currentEditingApartment = null;
+    let filteredApartments = [...referenceApartments];
+
+    // Local Storage Functions
+    function saveToLocalStorage() {
+      localStorage.setItem('propertyManagementData', JSON.stringify(allPayments));
+      localStorage.setItem('propertyDebtsData', JSON.stringify(allDebts));
+      localStorage.setItem('propertyApartmentsData', JSON.stringify(referenceApartments));
+    }
+
+    function loadFromLocalStorage() {
+      const paymentsData = localStorage.getItem('propertyManagementData');
+      if (paymentsData) {
+        allPayments = JSON.parse(paymentsData);
+      }
+      
+      const debtsData = localStorage.getItem('propertyDebtsData');
+      if (debtsData) {
+        allDebts = JSON.parse(debtsData);
+      }
+      
+      const apartmentsData = localStorage.getItem('propertyApartmentsData');
+      if (apartmentsData) {
+        referenceApartments = JSON.parse(apartmentsData);
+        filteredApartments = [...referenceApartments];
+      }
+    }
+
+    function initializeApp() {
+      loadFromLocalStorage();
+      populateApartmentSelect();
+      populateFloorFilter();
+      setupEventListeners();
+      applyFilters();
+      updateStatistics();
+    }
+
+    function populateFloorFilter() {
+      const floorSelect = document.getElementById('filter-floor');
+      floorSelect.innerHTML = '<option value="">الكل</option>';
+      const floors = [...new Set(referenceApartments.map(apt => apt.floor))];
+      
+      floors.forEach(floor => {
+        const option = document.createElement('option');
+        option.value = floor;
+        option.textContent = floor;
+        floorSelect.appendChild(option);
+      });
+    }
+
+    function populateApartmentSelect() {
+      const select = document.getElementById('apartment-select');
+      const debtSelect = document.getElementById('debt-apartment-select');
+      
+      select.innerHTML = '<option value="">اختر الشقة</option>';
+      debtSelect.innerHTML = '<option value="">اختر الشقة</option>';
+      
+      referenceApartments.forEach(apt => {
+        const option = document.createElement('option');
+        option.value = apt.id;
+        option.textContent = `${apt.number} - ${apt.resident} (${apt.floor})`;
+        select.appendChild(option);
+        
+        const debtOption = document.createElement('option');
+        debtOption.value = apt.id;
+        debtOption.textContent = `${apt.number} - ${apt.resident} (${apt.floor})`;
+        debtSelect.appendChild(debtOption);
+      });
+    }
+
+    function applyFilters() {
+      const searchName = document.getElementById('search-name')?.value.toLowerCase() || '';
+      const filterType = document.getElementById('filter-type')?.value || '';
+      const filterPayment = document.getElementById('filter-payment')?.value || '';
+      const filterFloor = document.getElementById('filter-floor')?.value || '';
+
+      filteredApartments = referenceApartments.filter(apt => {
+        const payment = allPayments.find(p => p.apartment_id === apt.id);
+        
+        const matchesName = apt.resident.toLowerCase().includes(searchName);
+        const matchesType = !filterType || apt.type === filterType;
+        const matchesPayment = !filterPayment || (payment && payment.payment_status === filterPayment);
+        const matchesFloor = !filterFloor || apt.floor === filterFloor;
+        
+        return matchesName && matchesType && matchesPayment && matchesFloor;
+      });
+      
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = '';
+      
+      filteredApartments.forEach(apt => {
+        const payment = allPayments.find(p => p.apartment_id === apt.id);
+        const row = document.createElement('tr');
+        
+        const amount = payment?.amount || 0;
+        const paid = payment?.paid || 0;
+        const paymentDebt = amount - paid;
+        const registeredDebt = allDebts.filter(d => d.apartment_id === apt.id).reduce((sum, d) => sum + d.amount, 0);
+        const debt = paymentDebt + registeredDebt;
+        
+        let paymentStatusBadge = '-';
+        if (payment) {
+          const badgeClass = payment.payment_status === 'مدفوع' ? 'paid-badge' : 
+                           payment.payment_status === 'دفع جزئي' ? 'partial-badge' : 'unpaid-badge';
+          paymentStatusBadge = `<span class="${badgeClass}">${payment.payment_status}</span>`;
+        }
+        
+        row.innerHTML = `
+          <td>${apt.id}</td>
+          <td>${apt.floor}</td>
+          <td>${apt.number}</td>
+          <td>${apt.location}</td>
+          <td>${apt.resident}</td>
+          <td>${apt.status}</td>
+          <td><span class="${apt.type === 'مالك' ? 'owner-badge' : 'tenant-badge'}">${apt.type}</span></td>
+          <td>${amount.toFixed(2)}</td>
+          <td>${paid.toFixed(2)}</td>
+          <td>${paymentStatusBadge}</td>
+          <td>${debt.toFixed(2)}</td>
+          <td>${payment?.notes || '-'}</td>
+          <td>${payment?.payment_method || '-'}</td>
+          <td>
+            <div class="action-buttons">
+              <button onclick="editApartment('${apt.id}')" class="bg-green-500 text-white rounded hover:bg-green-600">
+                🏠 تعديل الشقة
+              </button>
+              <button onclick="editPayment('${apt.id}')" class="bg-blue-500 text-white rounded hover:bg-blue-600">
+                ${payment ? '💰 تعديل دفعة' : '➕ إضافة دفعة'}
+              </button>
+              <button onclick="viewDebts('${apt.id}')" class="bg-orange-500 text-white rounded hover:bg-orange-600">
+                📋 عرض المديونية
+              </button>
+              ${payment ? `<button onclick="deletePayment('${apt.id}')" class="bg-red-500 text-white rounded hover:bg-red-600">🗑️ حذف دفعة</button>` : ''}
+            </div>
+          </td>
+        `;
+        
+        tbody.appendChild(row);
+      });
+    }
+
+    function updateStatistics() {
+      const totalApartments = referenceApartments.length;
+      const totalPaid = allPayments.reduce((sum, p) => sum + (p.paid || 0), 0);
+      const totalAmount = allPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const paymentDebt = totalAmount - totalPaid;
+      const registeredDebt = allDebts.reduce((sum, d) => sum + (d.amount || 0), 0);
+      const totalDebt = paymentDebt + registeredDebt;
+      const totalTenants = referenceApartments.filter(a => a.type === 'مستأجر').length;
+      const collectionRate = totalAmount > 0 ? ((totalPaid / totalAmount) * 100).toFixed(1) : 0;
+      
+      document.getElementById('total-apartments').textContent = totalApartments;
+      document.getElementById('total-paid').textContent = totalPaid.toFixed(2) + ' جنيه';
+      document.getElementById('total-debt').textContent = totalDebt.toFixed(2) + ' جنيه';
+      document.getElementById('total-tenants').textContent = totalTenants;
+      document.getElementById('collection-rate').textContent = collectionRate + '%';
+    }
+
+    function setupEventListeners() {
+      document.getElementById('add-debt-btn').addEventListener('click', () => {
+        document.getElementById('debt-form').reset();
+        document.getElementById('debt-year-input').value = '2025';
+        const today = new Date();
+        document.getElementById('debt-due-date-input').value = today.toISOString().split('T')[0];
+        document.getElementById('debt-modal').classList.add('active');
+      });
+      
+      document.getElementById('add-payment-btn').addEventListener('click', () => {
+        currentEditingPayment = null;
+        document.getElementById('modal-title').textContent = 'إضافة دفعة جديدة';
+        document.getElementById('payment-form').reset();
+        document.getElementById('year-input').value = '2025';
+        document.getElementById('payment-modal').classList.add('active');
+      });
+      
+      document.getElementById('cancel-btn').addEventListener('click', () => {
+        document.getElementById('payment-modal').classList.remove('active');
+      });
+      
+      document.getElementById('debt-cancel-btn').addEventListener('click', () => {
+        document.getElementById('debt-modal').classList.remove('active');
+      });
+      
+      document.getElementById('apt-cancel-btn').addEventListener('click', () => {
+        document.getElementById('apartment-modal').classList.remove('active');
+      });
+      
+      document.getElementById('payment-form').addEventListener('submit', handleFormSubmit);
+      document.getElementById('debt-form').addEventListener('submit', handleDebtFormSubmit);
+      document.getElementById('apartment-form').addEventListener('submit', handleApartmentFormSubmit);
+      
+      // Filter event listeners
+      document.getElementById('search-name').addEventListener('input', applyFilters);
+      document.getElementById('filter-type').addEventListener('change', applyFilters);
+      document.getElementById('filter-payment').addEventListener('change', applyFilters);
+      document.getElementById('filter-floor').addEventListener('change', applyFilters);
+      document.getElementById('clear-filters').addEventListener('click', clearFilters);
+      
+      // Export and print listeners
+      document.getElementById('export-btn').addEventListener('click', exportToExcel);
+      document.getElementById('print-btn').addEventListener('click', printReport);
+      document.getElementById('backup-btn').addEventListener('click', () => {
+        document.getElementById('backup-modal').classList.add('active');
+      });
+      document.getElementById('close-backup-modal').addEventListener('click', () => {
+        document.getElementById('backup-modal').classList.remove('active');
+      });
+      
+      // Backup listeners
+      document.getElementById('download-backup').addEventListener('click', downloadBackup);
+      document.getElementById('restore-file').addEventListener('change', handleFileSelect);
+      document.getElementById('restore-backup').addEventListener('click', restoreBackup);
+    }
+
+    function clearFilters() {
+      document.getElementById('search-name').value = '';
+      document.getElementById('filter-type').value = '';
+      document.getElementById('filter-payment').value = '';
+      document.getElementById('filter-floor').value = '';
+      applyFilters();
+    }
+
+    function exportToExcel() {
+      let csvContent = "م,الدور,رقم الشقة,مكان الشقة,اسم الساكن,حالة الشقة,نوع الساكن,المبلغ,دفع,حالة السداد,ديون,ملاحظات,طريقة الدفع\n";
+      
+      filteredApartments.forEach(apt => {
+        const payment = allPayments.find(p => p.apartment_id === apt.id);
+        const amount = payment?.amount || 0;
+        const paid = payment?.paid || 0;
+        const paymentDebt = amount - paid;
+        const registeredDebt = allDebts.filter(d => d.apartment_id === apt.id).reduce((sum, d) => sum + d.amount, 0);
+        const debt = paymentDebt + registeredDebt;
+        
+        const row = [
+          apt.id,
+          apt.floor,
+          apt.number,
+          apt.location,
+          apt.resident,
+          apt.status,
+          apt.type,
+          amount.toFixed(2),
+          paid.toFixed(2),
+          payment?.payment_status || '-',
+          debt.toFixed(2),
+          registeredDebt.toFixed(2),
+          payment?.notes || '-',
+          payment?.payment_method || '-'
+        ].map(field => `"${field}"`).join(',');
+        
+        csvContent += row + "\n";
+      });
+      
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `تقرير_العقار_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showMessage('تم تصدير التقرير بنجاح', 'success');
+    }
+
+    function printReport() {
+      const printWindow = window.open('', '_blank');
+      const printContent = `
+        <!DOCTYPE html>
+        <html dir="rtl">
+        <head>
+          <meta charset="UTF-8">
+          <title>تقرير إدارة العقار</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 12px; }
+            th { background-color: #f2f2f2; font-weight: bold; }
+            .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+            .stat-box { text-align: center; padding: 10px; border: 1px solid #ddd; }
+            @media print { body { margin: 0; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🏢 نظام إدارة العقار</h1>
+            <h2>تجميع ايصال شهر - عام 2025 م</h2>
+            <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')}</p>
+          </div>
+          
+          <div class="stats">
+            <div class="stat-box">
+              <strong>إجمالي الشقق</strong><br>
+              ${filteredApartments.length}
+            </div>
+            <div class="stat-box">
+              <strong>المبلغ المحصل</strong><br>
+              ${allPayments.reduce((sum, p) => sum + (p.paid || 0), 0).toFixed(2)} جنيه
+            </div>
+            <div class="stat-box">
+              <strong>إجمالي الديون</strong><br>
+              ${allPayments.reduce((sum, p) => sum + ((p.amount || 0) - (p.paid || 0)), 0).toFixed(2)} جنيه
+            </div>
+          </div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>م</th><th>الدور</th><th>رقم الشقة</th><th>مكان الشقة</th>
+                <th>اسم الساكن</th><th>حالة الشقة</th><th>نوع الساكن</th>
+                <th>المبلغ</th><th>دفع</th><th>حالة السداد</th><th>ديون</th>
+                <th>ملاحظات</th><th>طريقة الدفع</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredApartments.map(apt => {
+                const payment = allPayments.find(p => p.apartment_id === apt.id);
+                const amount = payment?.amount || 0;
+                const paid = payment?.paid || 0;
+                const debt = amount - paid;
+                
+                return `
+                  <tr>
+                    <td>${apt.id}</td>
+                    <td>${apt.floor}</td>
+                    <td>${apt.number}</td>
+                    <td>${apt.location}</td>
+                    <td>${apt.resident}</td>
+                    <td>${apt.status}</td>
+                    <td>${apt.type}</td>
+                    <td>${amount.toFixed(2)}</td>
+                    <td>${paid.toFixed(2)}</td>
+                    <td>${payment?.payment_status || '-'}</td>
+                    <td>${debt.toFixed(2)}</td>
+                    <td>${payment?.notes || '-'}</td>
+                    <td>${payment?.payment_method || '-'}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+      
+      showMessage('تم فتح نافذة الطباعة', 'success');
+    }
+
+    // Backup Functions
+    function downloadBackup() {
+      const backupData = {
+        version: "1.1",
+        timestamp: new Date().toISOString(),
+        payments: allPayments,
+        debts: allDebts,
+        apartments: referenceApartments
+      };
+      
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `نسخة_احتياطية_العقار_${new Date().toISOString().split('T')[0]}.json`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showMessage('تم تحميل النسخة الاحتياطية بنجاح', 'success');
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        document.getElementById('restore-backup').style.display = 'inline-block';
+      }
+    }
+
+    function restoreBackup() {
+      const fileInput = document.getElementById('restore-file');
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        showMessage('يرجى اختيار ملف للاستعادة', 'error');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const backupData = JSON.parse(e.target.result);
+          
+          if (backupData.payments) {
+            allPayments = backupData.payments;
+          }
+          if (backupData.debts) {
+            allDebts = backupData.debts;
+          }
+          if (backupData.apartments) {
+            referenceApartments = backupData.apartments;
+            filteredApartments = [...referenceApartments];
+          }
+          
+          saveToLocalStorage();
+          populateApartmentSelect();
+          populateFloorFilter();
+          applyFilters();
+          updateStatistics();
+          showMessage('تم استعادة البيانات بنجاح', 'success');
+          document.getElementById('backup-modal').classList.remove('active');
+        } catch (error) {
+          showMessage('خطأ في قراءة ملف النسخة الاحتياطية', 'error');
+        }
+      };
+      
+      reader.readAsText(file);
+    }
+
+    function handleDebtFormSubmit(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('debt-submit-btn');
+      submitBtn.classList.add('loading');
+      submitBtn.textContent = 'جاري التسجيل...';
+      
+      const apartmentId = document.getElementById('debt-apartment-select').value;
+      const debtType = document.getElementById('debt-type-input').value;
+      const description = document.getElementById('debt-description-input').value;
+      const amount = parseFloat(document.getElementById('debt-amount-input').value);
+      const dueDate = document.getElementById('debt-due-date-input').value;
+      const month = document.getElementById('debt-month-input').value;
+      const year = parseInt(document.getElementById('debt-year-input').value);
+      const notes = document.getElementById('debt-notes-input').value;
+      
+      const apartment = referenceApartments.find(a => a.id === apartmentId);
+      
+      const debtData = {
+        id: Date.now().toString(),
+        apartment_id: apartmentId,
+        floor: apartment.floor,
+        apartment_number: apartment.number,
+        location: apartment.location,
+        resident_name: apartment.resident,
+        resident_type: apartment.type,
+        debt_type: debtType,
+        description: description,
+        amount: amount,
+        due_date: dueDate,
+        month: month,
+        year: year,
+        notes: notes,
+        status: 'مستحقة',
+        created_at: new Date().toISOString()
+      };
+      
+      allDebts.push(debtData);
+      
+      saveToLocalStorage();
+      applyFilters();
+      updateStatistics();
+      
+      submitBtn.classList.remove('loading');
+      submitBtn.textContent = 'تسجيل المديونية';
+      
+      document.getElementById('debt-modal').classList.remove('active');
+      showMessage('تم تسجيل المديونية بنجاح', 'success');
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.classList.add('loading');
+      submitBtn.textContent = 'جاري الحفظ...';
+      
+      const apartmentId = document.getElementById('apartment-select').value;
+      const amount = parseFloat(document.getElementById('amount-input').value);
+      const paid = parseFloat(document.getElementById('paid-input').value);
+      const paymentStatus = document.getElementById('payment-status-input').value;
+      const paymentMethod = document.getElementById('payment-method-input').value;
+      const month = document.getElementById('month-input').value;
+      const year = parseInt(document.getElementById('year-input').value);
+      const notes = document.getElementById('notes-input').value;
+      
+      const apartment = referenceApartments.find(a => a.id === apartmentId);
+      const debt = amount - paid;
+      
+      const paymentData = {
+        id: currentEditingPayment ? currentEditingPayment.id : Date.now().toString(),
+        apartment_id: apartmentId,
+        floor: apartment.floor,
+        apartment_number: apartment.number,
+        location: apartment.location,
+        resident_name: apartment.resident,
+        status: apartment.status,
+        resident_type: apartment.type,
+        amount: amount,
+        paid: paid,
+        payment_status: paymentStatus,
+        debt: debt,
+        notes: notes,
+        payment_method: paymentMethod,
+        month: month,
+        year: year,
+        created_at: currentEditingPayment ? currentEditingPayment.created_at : new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      if (currentEditingPayment) {
+        const index = allPayments.findIndex(p => p.id === currentEditingPayment.id);
+        allPayments[index] = paymentData;
+      } else {
+        const existingIndex = allPayments.findIndex(p => p.apartment_id === apartmentId);
+        if (existingIndex >= 0) {
+          paymentData.id = allPayments[existingIndex].id;
+          paymentData.created_at = allPayments[existingIndex].created_at;
+          allPayments[existingIndex] = paymentData;
+        } else {
+          allPayments.push(paymentData);
+        }
+      }
+      
+      saveToLocalStorage();
+      applyFilters();
+      updateStatistics();
+      
+      submitBtn.classList.remove('loading');
+      submitBtn.textContent = 'حفظ';
+      
+      document.getElementById('payment-modal').classList.remove('active');
+      showMessage('تم الحفظ بنجاح', 'success');
+    }
+
+    function handleApartmentFormSubmit(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('apt-submit-btn');
+      submitBtn.classList.add('loading');
+      submitBtn.textContent = 'جاري الحفظ...';
+      
+      const floor = document.getElementById('apt-floor-input').value;
+      const number = document.getElementById('apt-number-input').value;
+      const location = document.getElementById('apt-location-input').value;
+      const resident = document.getElementById('apt-resident-input').value;
+      const status = document.getElementById('apt-status-input').value;
+      const type = document.getElementById('apt-type-input').value;
+      
+      if (currentEditingApartment) {
+        const index = referenceApartments.findIndex(a => a.id === currentEditingApartment.id);
+        if (index >= 0) {
+          referenceApartments[index] = {
+            ...referenceApartments[index],
+            floor: floor,
+            number: number,
+            location: location,
+            resident: resident,
+            status: status,
+            type: type
+          };
+          
+          // Update any existing payments with new apartment data
+          const paymentIndex = allPayments.findIndex(p => p.apartment_id === currentEditingApartment.id);
+          if (paymentIndex >= 0) {
+            allPayments[paymentIndex] = {
+              ...allPayments[paymentIndex],
+              floor: floor,
+              apartment_number: number,
+              location: location,
+              resident_name: resident,
+              status: status,
+              resident_type: type,
+              updated_at: new Date().toISOString()
+            };
+          }
+        }
+      }
+      
+      saveToLocalStorage();
+      populateApartmentSelect();
+      populateFloorFilter();
+      applyFilters();
+      updateStatistics();
+      
+      submitBtn.classList.remove('loading');
+      submitBtn.textContent = 'حفظ التعديلات';
+      
+      document.getElementById('apartment-modal').classList.remove('active');
+      showMessage('تم تحديث بيانات الشقة بنجاح', 'success');
+    }
+
+    window.editApartment = function(apartmentId) {
+      const apartment = referenceApartments.find(a => a.id === apartmentId);
+      if (!apartment) return;
+      
+      currentEditingApartment = apartment;
+      
+      document.getElementById('apt-floor-input').value = apartment.floor;
+      document.getElementById('apt-number-input').value = apartment.number;
+      document.getElementById('apt-location-input').value = apartment.location;
+      document.getElementById('apt-resident-input').value = apartment.resident;
+      document.getElementById('apt-status-input').value = apartment.status;
+      document.getElementById('apt-type-input').value = apartment.type;
+      
+      document.getElementById('apartment-modal').classList.add('active');
+    };
+
+    window.editPayment = function(apartmentId) {
+      const payment = allPayments.find(p => p.apartment_id === apartmentId);
+      const apartment = referenceApartments.find(a => a.id === apartmentId);
+      
+      currentEditingPayment = payment;
+      document.getElementById('modal-title').textContent = payment ? 'تعديل الدفعة' : 'إضافة دفعة جديدة';
+      
+      document.getElementById('apartment-select').value = apartmentId;
+      document.getElementById('amount-input').value = payment?.amount || '';
+      document.getElementById('paid-input').value = payment?.paid || '';
+      document.getElementById('payment-status-input').value = payment?.payment_status || '';
+      document.getElementById('payment-method-input').value = payment?.payment_method || '';
+      document.getElementById('month-input').value = payment?.month || '';
+      document.getElementById('year-input').value = payment?.year || 2025;
+      document.getElementById('notes-input').value = payment?.notes || '';
+      
+      document.getElementById('payment-modal').classList.add('active');
+    };
+
+    window.viewDebts = function(apartmentId) {
+      const apartment = referenceApartments.find(a => a.id === apartmentId);
+      const apartmentDebts = allDebts.filter(d => d.apartment_id === apartmentId);
+      
+      if (!apartment) return;
+      
+      let debtsHtml = '';
+      if (apartmentDebts.length === 0) {
+        debtsHtml = '<p class="text-gray-500 text-center py-4">لا توجد مديونيات مسجلة لهذه الشقة</p>';
+      } else {
+        debtsHtml = `
+          <div class="space-y-3">
+            ${apartmentDebts.map(debt => `
+              <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div class="flex justify-between items-start mb-2">
+                  <h4 class="font-semibold text-gray-800">${debt.debt_type}</h4>
+                  <span class="text-red-600 font-bold">${debt.amount.toFixed(2)} جنيه</span>
+                </div>
+                <p class="text-gray-600 mb-2">${debt.description}</p>
+                <div class="grid grid-cols-2 gap-2 text-sm text-gray-500">
+                  <div>📅 الاستحقاق: ${new Date(debt.due_date).toLocaleDateString('ar-EG')}</div>
+                  <div>📆 الشهر: ${debt.month} ${debt.year}</div>
+                </div>
+                ${debt.notes ? `<p class="text-sm text-gray-500 mt-2">💬 ${debt.notes}</p>` : ''}
+                <div class="mt-3 flex gap-2">
+                  <button onclick="deleteDebt('${debt.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    🗑️ حذف
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal active';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <h3 class="text-2xl font-bold text-gray-800 mb-4">📋 مديونيات الشقة ${apartment.number}</h3>
+          <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+            <p><strong>الساكن:</strong> ${apartment.resident}</p>
+            <p><strong>الدور:</strong> ${apartment.floor}</p>
+            <p><strong>المكان:</strong> ${apartment.location}</p>
+          </div>
+          ${debtsHtml}
+          <div class="flex gap-3 mt-6">
+            <button id="close-debts-modal" class="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all">
+              إغلاق
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      document.getElementById('close-debts-modal').addEventListener('click', () => {
+        document.body.removeChild(modal);
+      });
+    };
+
+    window.deleteDebt = function(debtId) {
+      const confirmDiv = document.createElement('div');
+      confirmDiv.className = 'modal active';
+      confirmDiv.innerHTML = `
+        <div class="modal-content text-center">
+          <h3 class="text-xl font-bold text-gray-800 mb-4">تأكيد حذف المديونية</h3>
+          <p class="text-gray-600 mb-6">هل أنت متأكد من حذف هذه المديونية؟</p>
+          <div class="flex gap-3 justify-center">
+            <button id="confirm-delete-debt" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">حذف</button>
+            <button id="cancel-delete-debt" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">إلغاء</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(confirmDiv);
+      
+      document.getElementById('confirm-delete-debt').addEventListener('click', () => {
+        const index = allDebts.findIndex(d => d.id === debtId);
+        if (index >= 0) {
+          allDebts.splice(index, 1);
+          saveToLocalStorage();
+          applyFilters();
+          updateStatistics();
+          showMessage('تم حذف المديونية بنجاح', 'success');
+          
+          // Close both modals
+          document.body.removeChild(confirmDiv);
+          const debtsModal = document.querySelector('.modal.active');
+          if (debtsModal) {
+            document.body.removeChild(debtsModal);
+          }
+        }
+      });
+      
+      document.getElementById('cancel-delete-debt').addEventListener('click', () => {
+        document.body.removeChild(confirmDiv);
+      });
+    };
+
+    window.deletePayment = function(apartmentId) {
+      const payment = allPayments.find(p => p.apartment_id === apartmentId);
+      if (!payment) return;
+      
+      const confirmDiv = document.createElement('div');
+      confirmDiv.className = 'modal active';
+      confirmDiv.innerHTML = `
+        <div class="modal-content text-center">
+          <h3 class="text-xl font-bold text-gray-800 mb-4">تأكيد الحذف</h3>
+          <p class="text-gray-600 mb-6">هل أنت متأكد من حذف هذه الدفعة؟</p>
+          <div class="flex gap-3 justify-center">
+            <button id="confirm-delete" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">حذف</button>
+            <button id="cancel-delete" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">إلغاء</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(confirmDiv);
+      
+      document.getElementById('confirm-delete').addEventListener('click', () => {
+        const index = allPayments.findIndex(p => p.apartment_id === apartmentId);
+        if (index >= 0) {
+          allPayments.splice(index, 1);
+          saveToLocalStorage();
+          applyFilters();
+          updateStatistics();
+          showMessage('تم الحذف بنجاح', 'success');
+        }
+        document.body.removeChild(confirmDiv);
+      });
+      
+      document.getElementById('cancel-delete').addEventListener('click', () => {
+        document.body.removeChild(confirmDiv);
+      });
+    };
+
+    function showMessage(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg text-white font-semibold shadow-lg z-50 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        if (document.body.contains(toast)) {
+          document.body.removeChild(toast);
+        }
+      }, 3000);
+    }
+
+    // Initialize the app when page loads
+    document.addEventListener('DOMContentLoaded', initializeApp);
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99bdc18982c5e221',t:'MTc2MjY5NTk4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
