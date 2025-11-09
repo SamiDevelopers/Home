@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام إدارة العقار المتقدم</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .table-container {
+      overflow-x: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+    
+    th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 8px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid #5a67d8;
+    }
+    
+    td {
+      padding: 10px 8px;
+      text-align: center;
+      border: 1px solid #e2e8f0;
+      font-size: 13px;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f7fafc;
+    }
+    
+    tr:hover {
+      background-color: #edf2f7;
+    }
+    
+    .owner-badge {
+      background-color: #48bb78;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .tenant-badge {
+      background-color: #4299e1;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .paid-badge {
+      background-color: #48bb78;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .unpaid-badge {
+      background-color: #f56565;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .partial-badge {
+      background-color: #ed8936;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90%;
+      overflow-y: auto;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #2d3748;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .backup-section {
+      background: #f8f9fa;
+      border: 2px dashed #dee2e6;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .backup-section input[type="file"] {
+      display: none;
+    }
+
+    .backup-section label {
+      background: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: inline-block;
+      margin: 5px;
+    }
+
+    .backup-section label:hover {
+      background: #0056b3;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .action-buttons button {
+      width: 100%;
+      font-size: 11px;
+      padding: 4px 6px;
+    }
+
+    optgroup {
+      font-weight: bold;
+      color: #4a5568;
+      background-color: #f7fafc;
+    }
+
+    optgroup option {
+      font-weight: normal;
+      color: #2d3748;
+      background-color: white;
+      padding-left: 20px;
+    }
+
+    .notification-item {
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 4px solid;
+      margin-bottom: 8px;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .notification-urgent {
+      background-color: #fef2f2;
+      border-color: #ef4444;
+      color: #991b1b;
+    }
+
+    .notification-warning {
+      background-color: #fffbeb;
+      border-color: #f59e0b;
+      color: #92400e;
+    }
+
+    .notification-info {
+      background-color: #eff6ff;
+      border-color: #3b82f6;
+      color: #1e40af;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin: 20px 0;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background-color: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #059669);
+      transition: width 0.3s ease;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      transform: translateY(0);
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .trend-up {
+      color: #10b981;
+    }
+
+    .trend-down {
+      color: #ef4444;
+    }
+
+    .mobile-responsive {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .mobile-responsive {
+        display: none;
+      }
+      
+      .mobile-only {
+        display: block;
+      }
+      
+      .action-buttons {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      
+      .action-buttons button {
+        flex: 1;
+        min-width: 120px;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .mobile-only {
+        display: none;
+      }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="bg-gradient-to-br from-gray-50 to-blue-50">
+  <div class="min-h-full p-4 md:p-6">
+   <div class="max-w-7xl mx-auto"><!-- Enhanced Header -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+     <div class="flex items-center justify-between mb-4">
+      <div>
+       <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">🏢 نظام إدارة العقار المتقدم</h1>
+       <div class="flex items-center gap-4 text-gray-600"><span class="flex items-center gap-2"> 📅 <span id="current-date"></span> </span> <span class="flex items-center gap-2"> ⏰ <span id="current-time"></span> </span>
+       </div>
+      </div>
+      <div class="hidden md:block">
+       <div class="text-right">
+        <div class="text-2xl font-bold text-gray-800">
+         تجميع ايصال شهر
+        </div>
+        <div class="text-lg text-gray-600">
+         عام 2025 م
+        </div>
+       </div>
+      </div>
+     </div>
+     <div class="flex flex-wrap gap-3 justify-center md:justify-end"><button id="backup-btn" class="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:from-yellow-600 hover:to-orange-600 transition-all shadow-md text-sm flex items-center gap-2"> 💾 نسخ احتياطي </button> <button id="export-btn" class="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 transition-all shadow-md text-sm flex items-center gap-2"> 📊 تصدير Excel </button> <button id="print-btn" class="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all shadow-md text-sm flex items-center gap-2"> 🖨️ طباعة </button> <button id="add-debt-btn" class="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-lg font-semibold hover:from-red-600 hover:to-pink-600 transition-all shadow-md text-sm flex items-center gap-2"> 📋 تسجيل مديونية </button> <button id="add-payment-btn" class="bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-indigo-600 transition-all shadow-md flex items-center gap-2"> ➕ إضافة دفعة جديدة </button>
+     </div>
+    </div><!-- Enhanced Statistics Dashboard -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+     <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-all">
+      <div class="flex items-center justify-between">
+       <div>
+        <div class="text-blue-100 text-sm mb-1">
+         إجمالي الشقق
+        </div>
+        <div id="total-apartments" class="text-2xl font-bold">
+         21
+        </div>
+        <div class="text-blue-200 text-xs mt-1"><span id="apartments-trend" class="trend-up">↗ +0%</span>
+        </div>
+       </div>
+       <div class="text-3xl opacity-80">
+        🏢
+       </div>
+      </div>
+     </div>
+     <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-all">
+      <div class="flex items-center justify-between">
+       <div>
+        <div class="text-green-100 text-sm mb-1">
+         المبلغ المحصل
+        </div>
+        <div id="total-paid" class="text-lg font-bold">
+         0 جنيه
+        </div>
+        <div class="text-green-200 text-xs mt-1"><span id="paid-trend" class="trend-up">↗ +0%</span>
+        </div>
+       </div>
+       <div class="text-3xl opacity-80">
+        💰
+       </div>
+      </div>
+     </div>
+     <div class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-all">
+      <div class="flex items-center justify-between">
+       <div>
+        <div class="text-red-100 text-sm mb-1">
+         إجمالي الديون
+        </div>
+        <div id="total-debt" class="text-lg font-bold">
+         0 جنيه
+        </div>
+        <div class="text-red-200 text-xs mt-1"><span id="debt-trend" class="trend-down">↘ -0%</span>
+        </div>
+       </div>
+       <div class="text-3xl opacity-80">
+        📋
+       </div>
+      </div>
+     </div>
+     <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-all">
+      <div class="flex items-center justify-between">
+       <div>
+        <div class="text-purple-100 text-sm mb-1">
+         المستأجرين
+        </div>
+        <div id="total-tenants" class="text-2xl font-bold">
+         10
+        </div>
+        <div class="text-purple-200 text-xs mt-1"><span id="tenants-trend" class="trend-up">↗ +0%</span>
+        </div>
+       </div>
+       <div class="text-3xl opacity-80">
+        👥
+       </div>
+      </div>
+     </div>
+     <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-all">
+      <div class="flex items-center justify-between">
+       <div>
+        <div class="text-orange-100 text-sm mb-1">
+         نسبة التحصيل
+        </div>
+        <div id="collection-rate" class="text-2xl font-bold">
+         0%
+        </div>
+        <div class="progress-bar mt-2">
+         <div id="collection-progress" class="progress-fill" style="width: 0%"></div>
+        </div>
+       </div>
+       <div class="text-3xl opacity-80">
+        📊
+       </div>
+      </div>
+     </div>
+     <div class="bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-all">
+      <div class="flex items-center justify-between">
+       <div>
+        <div class="text-teal-100 text-sm mb-1">
+         الديون المستحقة
+        </div>
+        <div id="overdue-debts" class="text-xl font-bold">
+         0
+        </div>
+        <div class="text-teal-200 text-xs mt-1"><span id="overdue-trend" class="trend-down">↘ -0%</span>
+        </div>
+       </div>
+       <div class="text-3xl opacity-80">
+        ⚠️
+       </div>
+      </div>
+     </div>
+    </div><!-- Advanced Reports Section -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+     <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
+      <h3 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">📊 التقارير والإحصائيات المتقدمة</h3>
+      <div class="flex flex-wrap gap-2"><button id="toggle-charts" class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all text-sm flex items-center gap-2"> 📈 عرض الرسوم البيانية </button> <button id="monthly-report-btn" class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all text-sm flex items-center gap-2"> 📅 تقرير شهري </button> <button id="yearly-report-btn" class="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-emerald-600 hover:to-green-700 transition-all text-sm flex items-center gap-2"> 📆 تقرير سنوي </button>
+      </div>
+     </div><!-- Charts Container -->
+     <div id="charts-container" class="hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><!-- Payment Status Chart -->
+       <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+        <h4 class="text-lg font-semibold text-gray-800 mb-4 text-center flex items-center justify-center gap-2">📊 توزيع حالات السداد</h4>
+        <div class="chart-container">
+         <canvas id="payment-status-chart" width="300" height="200"></canvas>
+        </div>
+        <div id="payment-status-legend" class="flex justify-center gap-4 mt-4 text-sm flex-wrap"></div>
+       </div><!-- Monthly Income Chart -->
+       <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+        <h4 class="text-lg font-semibold text-gray-800 mb-4 text-center flex items-center justify-center gap-2">💰 الإيرادات الشهرية</h4>
+        <div class="chart-container">
+         <canvas id="monthly-income-chart" width="300" height="200"></canvas>
+        </div>
+       </div>
+      </div><!-- Debt Analysis -->
+      <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+       <h4 class="text-lg font-semibold text-gray-800 mb-4 text-center flex items-center justify-center gap-2">📋 تحليل المديونيات حسب النوع</h4>
+       <div class="chart-container">
+        <canvas id="debt-analysis-chart" width="600" height="300"></canvas>
+       </div>
+      </div>
+     </div><!-- Quick Stats Grid -->
+     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+      <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-200 rounded-xl p-4 text-center hover:shadow-lg transition-all">
+       <div class="text-emerald-600 text-3xl mb-2">
+        ✅
+       </div>
+       <div class="text-emerald-800 font-semibold text-sm">
+        الشقق المدفوعة
+       </div>
+       <div id="paid-apartments" class="text-2xl font-bold text-emerald-600">
+        0
+       </div>
+       <div class="text-emerald-500 text-xs mt-1">
+        من إجمالي الشقق
+       </div>
+      </div>
+      <div class="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-xl p-4 text-center hover:shadow-lg transition-all">
+       <div class="text-red-600 text-3xl mb-2">
+        ❌
+       </div>
+       <div class="text-red-800 font-semibold text-sm">
+        الشقق غير المدفوعة
+       </div>
+       <div id="unpaid-apartments" class="text-2xl font-bold text-red-600">
+        0
+       </div>
+       <div class="text-red-500 text-xs mt-1">
+        تحتاج متابعة
+       </div>
+      </div>
+      <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-200 rounded-xl p-4 text-center hover:shadow-lg transition-all">
+       <div class="text-yellow-600 text-3xl mb-2">
+        ⚠️
+       </div>
+       <div class="text-yellow-800 font-semibold text-sm">
+        دفع جزئي
+       </div>
+       <div id="partial-apartments" class="text-2xl font-bold text-yellow-600">
+        0
+       </div>
+       <div class="text-yellow-500 text-xs mt-1">
+        تحتاج استكمال
+       </div>
+      </div>
+      <div class="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-4 text-center hover:shadow-lg transition-all">
+       <div class="text-gray-600 text-3xl mb-2">
+        🏠
+       </div>
+       <div class="text-gray-800 font-semibold text-sm">
+        الشقق الفارغة
+       </div>
+       <div id="empty-apartments" class="text-2xl font-bold text-gray-600">
+        0
+       </div>
+       <div class="text-gray-500 text-xs mt-1">
+        متاحة للإيجار
+       </div>
+      </div>
+     </div>
+    </div><!-- Enhanced Notifications Panel -->
+    <div id="notifications-panel" class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+     <div class="flex items-center justify-between mb-4">
+      <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">🔔 التنبيهات والتذكيرات <span id="notifications-count" class="bg-red-500 text-white text-xs px-2 py-1 rounded-full">0</span></h3><button id="clear-notifications" class="text-gray-500 hover:text-red-500 transition-colors text-sm"> 🗑️ مسح الكل </button>
+     </div>
+     <div id="notifications-list" class="space-y-3">
+      <div class="text-center text-gray-500 py-8">
+       <div class="text-4xl mb-2">
+        🔕
+       </div>
+       <p>لا توجد تنبيهات حالياً</p>
+      </div>
+     </div>
+    </div><!-- Enhanced Filters -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+     <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">🔍 البحث والتصفية المتقدمة</h3>
+     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">البحث بالاسم</label> <input type="text" id="search-name" placeholder="ابحث عن ساكن..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">نوع الساكن</label> <select id="filter-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"> <option value="">الكل</option> <option value="مالك">مالك</option> <option value="مستأجر">مستأجر</option> </select>
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">حالة السداد</label> <select id="filter-payment" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"> <option value="">الكل</option> <option value="مدفوع">مدفوع</option> <option value="غير مدفوع">غير مدفوع</option> <option value="دفع جزئي">دفع جزئي</option> </select>
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">الدور</label> <select id="filter-floor" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"> <option value="">الكل</option> </select>
+      </div>
+     </div>
+     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">الشهر</label> <select id="filter-month" class="w-full px-4 p
